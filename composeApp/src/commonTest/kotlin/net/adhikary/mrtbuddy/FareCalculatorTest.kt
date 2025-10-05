@@ -7,51 +7,31 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
 class FareCalculatorTest {
-    private val calculator = FareCalculator.getInstance()
+    private val calculator = FareCalculator
 
     @Test
     fun testStationList() {
         val stations = calculator.getAllStations()
-        assertEquals(16, stations.size)
+        assertEquals(17, stations.size)
         assertEquals("Uttara North", stations[0].name)
-        assertEquals("Motijheel", stations[15].name)
+        assertEquals("Kamalapur", stations[16].name)
     }
 
     @Test
     fun testFareCalculation() {
-        val fares = mapOf(
-            "Uttara North" to 0,
-            "Uttara Center" to 20,
-            "Uttara South" to 20,
-            "Pallabi" to 30,
-            "Mirpur 11" to 30,
-            "Mirpur 10" to 40,
-            "Kazipara" to 40,
-            "Shewrapara" to 50,
-            "Agargaon" to 50,
-            "Bijoy Sarani" to 60,
-            "Farmgate" to 60,
-            "Karwan Bazar" to 70,
-            "Shahbagh" to 80,
-            "Dhaka University" to 90,
-            "Bangladesh Secretariat" to 90,
-            "Motijheel" to 100
-        )
-
-        fun calculateFare(start: String, end: String): Int {
-            if (!fares.containsKey(start) || !fares.containsKey(end)) return -1
-            return kotlin.math.abs(fares[end]!! - fares[start]!!)
-        }
-
+        val stations = calculator.getAllStations().associateBy { it.name }
+        
         // Test maximum fare
-        assertEquals(100, calculateFare("Uttara North", "Motijheel"))
+        assertEquals(100, calculator.calculateFare(stations["Uttara North"]!!, stations["Motijheel"]!!))
         // Test reverse direction
-        assertEquals(100, calculateFare("Motijheel", "Uttara North"))
+        assertEquals(100, calculator.calculateFare(stations["Motijheel"]!!, stations["Uttara North"]!!))
         // Test intermediate station fare
-        assertEquals(30, calculateFare("Karwan Bazar", "Bangladesh Secretariat"))
-        assertEquals(50, calculateFare("Mirpur 10", "Farmgate"))
+        assertEquals(20, calculator.calculateFare(stations["Karwan Bazar"]!!, stations["Bangladesh Secretariat"]!!))
+        assertEquals(30, calculator.calculateFare(stations["Mirpur 10"]!!, stations["Farmgate"]!!))
         // Test same station (should be free)
-        assertEquals(0, calculateFare("Farmgate", "Farmgate"))
+        assertEquals(0, calculator.calculateFare(stations["Farmgate"]!!, stations["Farmgate"]!!))
+        // Test Kamalapur station
+        assertEquals(100, calculator.calculateFare(stations["Uttara North"]!!, stations["Kamalapur"]!!))
     }
 
     @Test

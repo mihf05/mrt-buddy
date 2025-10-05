@@ -1,5 +1,7 @@
 package net.adhikary.mrtbuddy.ui.viewmodel
 
+import net.adhikary.mrtbuddy.data.model.FareCalculator
+import net.adhikary.mrtbuddy.model.CardState
 import kotlin.test.Test
 import kotlin.test.BeforeTest
 import kotlin.test.assertEquals
@@ -26,30 +28,6 @@ class FareCalculatorViewModelTest {
 
     @Test
     fun testStationSelection() {
-        val fares = mapOf(
-            "Uttara North" to 0,
-            "Uttara Center" to 20,
-            "Uttara South" to 20,
-            "Pallabi" to 30,
-            "Mirpur 11" to 30,
-            "Mirpur 10" to 40,
-            "Kazipara" to 40,
-            "Shewrapara" to 50,
-            "Agargaon" to 50,
-            "Bijoy Sarani" to 60,
-            "Farmgate" to 60,
-            "Karwan Bazar" to 70,
-            "Shahbagh" to 80,
-            "Dhaka University" to 90,
-            "Bangladesh Secretariat" to 90,
-            "Motijheel" to 100
-        )
-
-        fun calculateFare(start: String, end: String): Int {
-            if (!fares.containsKey(start) || !fares.containsKey(end)) return -1
-            return kotlin.math.abs(fares[end]!! - fares[start]!!)
-        }
-
         // Get first and last stations
         val firstStation = viewModel.stations.first()
         val lastStation = viewModel.stations.last()
@@ -64,8 +42,9 @@ class FareCalculatorViewModelTest {
         assertEquals(lastStation, viewModel.toStation)
         assertEquals(false, viewModel.toExpanded)
 
-        // Verify fare calculation using updated logic
-        assertEquals(calculateFare(firstStation.name, lastStation.name), viewModel.calculatedFare)
+        // Verify fare calculation using production logic
+        val expectedFare = FareCalculator.calculateFare(firstStation, lastStation)
+        assertEquals(expectedFare, viewModel.calculatedFare)
     }
 
     @Test
