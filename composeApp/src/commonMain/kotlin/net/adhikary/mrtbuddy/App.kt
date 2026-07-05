@@ -2,13 +2,12 @@ package net.adhikary.mrtbuddy
 
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberCoroutineScope
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.launch
 import net.adhikary.mrtbuddy.managers.RescanManager
 import net.adhikary.mrtbuddy.nfc.getNFCManager
+import net.adhikary.mrtbuddy.settings.model.DarkThemeConfig
 import net.adhikary.mrtbuddy.ui.screens.home.MainScreen
 import net.adhikary.mrtbuddy.ui.screens.home.MainScreenAction
 import net.adhikary.mrtbuddy.ui.screens.home.MainScreenEvent
@@ -22,52 +21,51 @@ import org.koin.compose.viewmodel.koinViewModel
 @Composable
 @Preview
 fun App(
-    darkTheme: Boolean = isSystemInDarkTheme(),
     dynamicColor: Boolean
 ) {
     val mainVm = koinViewModel<MainScreenViewModel>()
-    val scope = rememberCoroutineScope()
     val nfcManager = getNFCManager()
-
 
     mainVm.events.observeAsActions { event ->
         when (event) {
             is MainScreenEvent.Error -> {}
             MainScreenEvent.ShowMessage -> {}
-
         }
     }
-
 
     if (RescanManager.isRescanRequested.value) {
         nfcManager.startScan()
         RescanManager.resetRescanRequest()
     }
 
-    scope.launch {
-        nfcManager.cardReadResults.collectLatest { result ->
+    // Collect NFC state and card read results - runs once per composition lifecycle
+    LaunchedEffect(nfcManager) {
+        nfcManager.cardReadResults.collect { result ->
             result?.let {
                 mainVm.onAction(MainScreenAction.UpdateCardReadResult(it))
             }
         }
     }
-    scope.launch {
-        nfcManager.cardState.collectLatest {
-            // as nfc manager need to call from composable scope
-            // so we had to  listen the change on composable scope and update the state of vm
-            // McardState.value = it
+
+    LaunchedEffect(nfcManager) {
+        nfcManager.cardState.collect {
             mainVm.onAction(MainScreenAction.UpdateCardState(it))
         }
     }
 
-
+    // Start NFC scan once
     nfcManager.startScan()
 
+    val state: MainScreenState by mainVm.state.collectAsState()
+
     MRTBuddyTheme(
-        darkTheme = darkTheme,
-        dynamicColor = dynamicColor
+        darkTheme = when (state.darkThemeConfig) {
+            DarkThemeConfig.FOLLOW_SYSTEM -> isSystemInDarkTheme()
+            DarkThemeConfig.DARK -> true
+            DarkThemeConfig.LIGHT -> false
+        },
+        dynamicColor = dynamicColor,
     ) {
-        val state: MainScreenState by mainVm.state.collectAsState()
 
         LocalizedApp(
             language = state.currentLanguage
